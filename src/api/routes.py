@@ -18,6 +18,21 @@ def create_user():
 
     data = request.json
 
+    required_fields = ['name', 'surname', 'username', 'password']
+    for field in required_fields:
+        if field not in data or not data[field]:
+            return jsonify({'message': f'The field {field} is required'}), 400
+
+    # Validando length de campos
+    if len(data.get('name', '')) < 3 or len(data.get('name', '')) > 20:
+        return jsonify({'message': 'The name must be between 3 and 20 characters long'}), 400
+    
+    if len(data.get('username', '')) < 3 or len(data.get('username', '')) > 20:
+        return jsonify({'message': 'The username must be between 3 and 20 characters long'}), 400
+
+    if len(data.get('password', '')) < 5 or len(data.get('password', '')) > 10:
+        return jsonify({'message': 'The password must be between 5 and 10 characters long'}), 400
+
     try:
         new_user = User(
             avatar = data.get('avatar'),
