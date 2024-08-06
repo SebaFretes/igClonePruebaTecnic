@@ -6,6 +6,9 @@ from api.models import db, User, Post, PostLikes
 from api.utils import generate_sitemap, APIException
 from flask_cors import CORS
 from datetime import datetime
+from flask_jwt_extended import create_access_token
+from flask_jwt_extended import get_jwt_identity
+from flask_jwt_extended import jwt_required
 
 api = Blueprint('api', __name__)
 
@@ -13,7 +16,7 @@ api = Blueprint('api', __name__)
 CORS(api)
 
 
-@api.route('/users', methods=['POST'])
+@api.route('/register', methods=['POST'])
 def create_user():
 
     data = request.json
@@ -49,8 +52,27 @@ def create_user():
         return jsonify( new_user.serialize() ), 201
     except Exception as e:
         return jsonify( {'error': str(e) } ), 400
+
+@api.route('/login', methods=['POST'])
+def login():
+
+    username = request.json.get('username', None)
+    password = request.json.get('password', None)
+
+    if username == None or password == None:
+        return jsonify({'msg': 'Bad username or password'}), 401
+
+    user = User.query.filter_by(username=username).one_or_none()
+
+    if user != None:
+        if password == user.password:
+            access_token = create_access_token(identity=username)
+            return jsonify(access_token=access_token)
+        else:
+            return jsonify({"msg": "Wrong password"}), 401
+    return jsonify({"msg": "User not found"}), 404
     
-@api.route('/posts', methods=['POST'])
+@api.route('/post', methods=['POST'])
 def create_post():
 
     data = request.json
@@ -82,3 +104,14 @@ def create_post():
         return jsonify( new_post.serialize() ), 201
     except Exception as e:
         return jsonify( {'error': str(e) } ), 400
+
+
+@api.route("/demo", methods=["GET"])
+@jwt_required()
+def protected():
+    # Access the identity of the current user with get_jwt_identity
+    current_user = get_jwt_identity()
+    user = User.query.filter_by(username=current_user).one_or_none()
+    if user != None:
+        return jsonify(user.serialize()), 200
+    return jsonify({"msg": "Please contact support"}), 200
