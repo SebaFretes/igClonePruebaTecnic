@@ -2,18 +2,8 @@ const getState = ({ getStore, getActions, setStore }) => {
 	return {
 		store: {
 			message: null,
-			demo: [
-				{
-					title: "FIRST",
-					background: "white",
-					initial: "white"
-				},
-				{
-					title: "SECOND",
-					background: "white",
-					initial: "white"
-				}
-			]
+			token: null || localStorage.getItem('token'),
+			profile: null,
 		},
 		actions: {
 			// Use getActions to call a function within a fuction
@@ -46,7 +36,80 @@ const getState = ({ getStore, getActions, setStore }) => {
 
 				//reset the global store
 				setStore({ demo: demo });
-			}
+			},
+			register: async (user) => {
+				const resp = await fetch(process.env.BACKEND_URL + "/api/register", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify(user)
+				})
+				const data = await resp.json()
+				if (resp.ok) {
+					localStorage.setItem('token', data.access_token)
+					setStore({ token: data.access_token })
+					return true;
+				}
+				else return false;
+			},
+			login: async (user) => {
+				const resp = await fetch(process.env.BACKEND_URL + "/api/login", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify(user)
+				})
+				const data = await resp.json()
+				if (resp.ok) {
+					localStorage.setItem('token', data.access_token)
+					setStore({ token: data.access_token })
+					return true;
+				}
+				else return false;
+			},
+			getProfile: async (user) => {
+				const store = getStore();
+				const resp = await fetch(process.env.BACKEND_URL + "/api/demo", {
+					method: "GET",
+					headers: {
+						"Content-Type": "application/json",
+						"Authorization": "Bearer " + store.token
+					},
+				})
+				const data = await resp.json()
+				if (resp.ok) {
+					setStore({ profile: data })
+				}
+			},
+			logout: () => {
+				setStore({ profile: null, token: null })
+				localStorage.removeItem('token')
+			},
+			createPost: async (formData) => {
+                try {
+                    const resp = await fetch(process.env.BACKEND_URL + "/api/post", {
+                        method: "POST",
+                        body: formData,
+                        headers: {
+                            "Authorization": "Bearer " + getStore().token,
+                        }
+                    });
+                    const data = await resp.json();
+                    
+                    if (resp.ok) {
+                        console.log("Post created successfully:", data);
+                        return true;
+                    } else {
+                        console.log("Failed to create post:", data);
+                        return false;
+                    }
+                } catch (error) {
+                    console.log("Error creating post:", error);
+                    return false;
+                }
+            },
 		}
 	};
 };
