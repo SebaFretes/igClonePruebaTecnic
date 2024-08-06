@@ -74,6 +74,8 @@
 		]
 	},
 	"dependencies": {
+		"firebase": "^10.12.5",
+		"firebase-storage": "^1.1.4",
 		"prop-types": "^15.6.1",
 		"react": "^16.8.4",
 		"react-dom": "^16.8.4",
